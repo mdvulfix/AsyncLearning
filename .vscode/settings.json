@@ -1,0 +1,143 @@
+﻿{
+    "files.exclude":
+    {
+        "**/.DS_Store":true,
+        "**/.git":true,
+        "**/.gitmodules":true,
+        "**/*.booproj":true,
+        "**/*.pidb":true,
+        "**/*.suo":true,
+        "**/*.user":true,
+        "**/*.userprefs":true,
+        "**/*.unityproj":true,
+        "**/*.dll":true,
+        "**/*.exe":true,
+        "**/*.pdf":true,
+        "**/*.mid":true,
+        "**/*.midi":true,
+        "**/*.wav":true,
+        "**/*.gif":true,
+        "**/*.ico":true,
+        "**/*.jpg":true,
+        "**/*.jpeg":true,
+        "**/*.png":true,
+        "**/*.psd":true,
+        "**/*.tga":true,
+        "**/*.tif":true,
+        "**/*.tiff":true,
+        "**/*.3ds":true,
+        "**/*.3DS":true,
+        "**/*.fbx":true,
+        "**/*.FBX":true,
+        "**/*.lxo":true,
+        "**/*.LXO":true,
+        "**/*.ma":true,
+        "**/*.MA":true,
+        "**/*.obj":true,
+        "**/*.OBJ":true,
+        "**/*.asset":true,
+        "**/*.cubemap":true,
+        "**/*.flare":true,
+        "**/*.mat":true,
+        "**/*.meta":true,
+        "**/*.prefab":true,
+        "**/*.unity":true,
+        "build/":true,
+        "Build/":true,
+        "Library/":true,
+        "library/":true,
+        "obj/":true,
+        "Obj/":true,
+        "ProjectSettings/":true,
+        "temp/":true,
+        "Temp/":true
+    },
+
+    "editor.tokenColorCustomizations": 
+    {
+        "[Monolivia]": 
+        {
+            "textMateRules": 
+            [
+                
+                
+
+                {
+                    "scope": "source.cs entity.name.type.class.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffa500",
+                        "fontStyle": "bold"
+                    }
+                    
+                },
+                
+                {
+                    "scope": "source.cs entity.name.type.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffff00",
+                        "fontStyle": ""
+                    }
+                    
+                },
+                
+                {
+                    "scope": "source.cs storage.modifier.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffbcff",
+                        "fontStyle": ""
+                    }
+                    
+                },
+                
+                {
+                    "scope": "source.cs entity.name.variable.local.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffffff",
+                        "fontStyle": "italic"
+                    }
+                    
+                },
+                
+                {
+                    "scope": "source.cs entity.name.variable.field.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffffff",
+                        "fontStyle": "italic"
+                    }
+                    
+                },
+                
+                {
+                    "scope": "source.cs variable.other.readwrite.cs",
+                    "settings": 
+                    {
+                        "foreground": "#ffffff",
+                        "fontStyle": ""
+                    }
+                    
+                },
+   
+                {
+                    "scope": "source.cs entity.name.variable.parameter.cs",
+                    "settings": 
+                    {
+                        //"foreground": "#B274AA",
+                        //"foreground": "#ffbcff",
+                        //"foreground": "#ffff00",
+                        //"foreground": "#ffffff",
+                        //"foreground": "#00ffff",
+                        "fontStyle": ""
+                    }
+                    
+                }
+           
+                
+            ]
+        }
+    }
+}
