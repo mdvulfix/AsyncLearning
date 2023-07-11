@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Yield = UnityEngine.CustomYieldInstruction;
 
 namespace Core.Async.Test
 {
@@ -19,7 +19,7 @@ namespace Core.Async.Test
         [SerializeField] private Color m_Color;
 
 
-        public override void Init(params object[] args)
+        public void Configure(params object[] args)
         {
             m_ColorDefault = Color.black;
             m_Color = Color.yellow;
@@ -29,9 +29,8 @@ namespace Core.Async.Test
 
             SetColor(m_ColorDefault);
 
-
-
             base.Init();
+
         }
 
         private void Start()
@@ -75,5 +74,28 @@ namespace Core.Async.Test
 
             m_Renderer.material.color = color;
         }
+
+        public override void Load()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Unload()
+        {
+            throw new NotImplementedException();
+        }
+
+
+
+        // LOAD //
+        //public override IAsync Load() { return new WaitForSeconds(5f); }
+        //public override IAsync Unload();
+
+
     }
+
+
+
+
+
 }

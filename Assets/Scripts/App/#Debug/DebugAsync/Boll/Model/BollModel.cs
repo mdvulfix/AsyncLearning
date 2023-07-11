@@ -17,9 +17,6 @@ namespace Core.Async.Test
         public event Action<IResult> Activated;
 
 
-
-
-
         // SUBSCRIBE //
         public override void Subscribe()
         {
@@ -82,6 +79,11 @@ namespace Core.Async.Test
             Unsubscribe();
 
         }
+
+
+        // LOAD //
+        public abstract void Load();
+        public abstract void Unload();
 
 
         // ACTIVATE //

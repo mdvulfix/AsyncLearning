@@ -18,6 +18,14 @@ namespace Core.Async
         [SerializeField] private bool m_isReady;
 
 
+
+        private bool isComplete = false;
+        private Action m_OnResolve;
+        private Action asyncAction;
+
+
+        private Coroutine m_Coroutine;
+
         public string Label => "Awaiter";
 
         public bool IsReady => m_isReady;
@@ -84,7 +92,7 @@ namespace Core.Async
 
         public override void Dispose()
         {
-            Cancel();
+            Reset();
             Clear();
 
             var log = $"{this}: {Label} disposed.";
@@ -133,7 +141,7 @@ namespace Core.Async
         {
             var obj = gameObject;
 
-            Cancel();
+            Reset();
             obj.SetActive(false);
 
 
@@ -146,53 +154,62 @@ namespace Core.Async
 
 
 
-        public void Run(Func<IResult> func)
+        public IEnumerator Run(IEnumerator func)
         {
+
+            if (m_Coroutine != null)
+                StopCoroutine(m_Coroutine);
+
+
+            m_Coroutine = StartCoroutine(func);
+            yield return m_Coroutine;
+
+            Resolve();
+        }
+
+
+
+
+        public IYield Awaite(Action func)
+        {
+            var awaiteFunc = new YieldWaitForAction(func);
+            Run(awaiteFunc);
+            //func.Invoke();
+            return awaiteFunc;
+
+
             //StopCoroutine(nameof(AsyncExecute));
 
-            try
-            {
-                var isReady = false;
-                var log = $"{this}: async operation started...";
-                var result = new Result(this, isReady, log);
+            //var isReady = false;
+            //var log = $"{this}: async operation started...";
+            //var result = new Result(this, isReady, log);
 
-                StartCoroutine(AsyncExecute(func));
-                Complite();
-
-            }
-            catch (Exception exception)
-            {
-                Debug.Log(exception.Message);
-                Cancel();
-            }
-        }
-
-        public void Complite()
-        {
-
-            StopCoroutine(nameof(AsyncExecute));
-
-            var isReady = true;
-            var log = $"{this}: async operation finished...";
-            var result = new Result(this, isReady, log);
-
-            FuncExecuted.Invoke();
-
-            Debug.Log(log);
-            ReadyChanged?.Invoke(result);
+            //Complite();
 
         }
 
-        public void Cancel()
+
+
+
+
+        public void Resolve()
         {
-            StopCoroutine(nameof(AsyncExecute));
+            if (m_Coroutine != null)
+                StopCoroutine(m_Coroutine);
 
-            var isReady = false;
-            var log = $"{this}: async operation cancelled...";
-            var result = new Result(this, isReady, log);
 
-            Debug.Log(log);
-            ReadyChanged?.Invoke(result);
+            m_isReady = true;
+            m_OnResolve?.Invoke();
+
+        }
+
+        public void Reset()
+        {
+            if (m_Coroutine != null)
+                StopCoroutine(m_Coroutine);
+
+
+            m_isReady = true;
         }
 
 
@@ -208,10 +225,7 @@ namespace Core.Async
         }
 
 
-        private IEnumerator<IResult> AsyncExecute(Func<IResult> func)
-        {
-            yield return func.Invoke();
-        }
+
 
 
 
@@ -263,9 +277,10 @@ namespace Core.Async
         event Action<IResult> ReadyChanged;
 
         //void FuncRun(Func<Action<bool>, IEnumerator> func);
-        void Run(Func<IResult> func);
-        void Complite();
-        void Cancel();
+        IEnumerator Run(IEnumerator func);
+        IYield Awaite(Action func);
+        void Resolve();
+        void Reset();
     }
 
 

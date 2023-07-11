@@ -96,16 +96,30 @@ namespace Core.Async
 
         public virtual void Update()
         {
-            FuncQueueRunAsync();
+            FuncQueueExecute();
         }
 
 
-        public void Run(Func<IResult> func)
+
+        public IEnumerator Run(IEnumerator func)
         {
-            if (GetAwaiter(out var awaiter))
-                awaiter.Run(func);
-            else
-                m_FuncExecuteQueue.Add(new FuncAsyncInfo(awaiter, func));
+            if (!GetAwaiter(out var awaiter))
+                throw new Exception("Awaiter was not found!");
+
+            yield return awaiter.Run(func);
+            //return FuncQueueSetAwaiter(awaiter, func);
+        }
+
+
+
+
+        public IYield Awaite(Action func)
+        {
+            if (!GetAwaiter(out var awaiter))
+                throw new Exception("Awaiter was not found!");
+
+            return awaiter.Awaite(func);
+            //return FuncQueueSetAwaiter(awaiter, func);
         }
 
 
@@ -170,7 +184,15 @@ namespace Core.Async
 
         }
 
-        private void FuncQueueRunAsync()
+
+        private IYield FuncQueueSetAwaiter(IAwaiter awaiter, Action func)
+        {
+            var info = new FuncAsyncInfo(awaiter, func);
+            m_FuncExecuteQueue.Add(info);
+            return new YieldWaitForAction(func);
+        }
+
+        private void FuncQueueExecute()
         {
             if (m_FuncExecuteQueue?.Count == 0)
                 return;
@@ -186,7 +208,7 @@ namespace Core.Async
                     if (m_FuncExecuteQueue.Contains(info))
                         m_FuncExecuteQueue.Remove(info);
 
-                    info.Awaiter.Run(info.FuncAsync);
+                    info.Awaiter.Awaite(info.Func);
                 }
             }
         }
@@ -238,7 +260,12 @@ namespace Core.Async
         event Action<IResult> Initialized;
         event Action<IAsyncInfo> FuncExecuted;
 
-        void Run(Func<IResult> func);
+
+        IEnumerator Run(IEnumerator func);
+        IYield Awaite(Action action);
+
+
+
     }
 
     public struct AsyncControllerConfig : IConfig
@@ -254,15 +281,16 @@ namespace Core.Async
     public struct FuncAsyncInfo : IAsyncInfo
     {
         public IAwaiter Awaiter { get; private set; }
-        public Func<IResult> FuncAsync { get; private set; }
+        public Action Func { get; private set; }
 
-        public FuncAsyncInfo(IAwaiter awaiter, Func<IResult> func)
+
+
+        public FuncAsyncInfo(IAwaiter awaiter, Action func)
         {
-            FuncAsync = func;
+            Func = func;
             Awaiter = awaiter;
+
         }
-
-
 
 
     }
@@ -282,7 +310,7 @@ namespace Core.Async
     public interface IAsyncInfo
     {
         IAwaiter Awaiter { get; }
-        Func<IResult> FuncAsync { get; }
+        Action Func { get; }
 
     }
 

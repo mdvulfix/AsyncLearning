@@ -60,29 +60,32 @@ namespace Core.Async.Test
 
         private void Start()
         {
-            SpawnWawesAsync();
+            Run(SpawnAsync());
 
         }
 
-        private void SpawnWawesAsync()
+        private IEnumerator SpawnAsync()
         {
             for (int i = 0; i < 1; i++)
             {
                 var label = "Boll " + i;
                 var position = new Vector3(Random.Range(0f, 2f), Random.Range(0f, 3f), Random.Range(0f, 2f));
                 var boll = Spawn<BollDefault>(label, position, m_Boll, m_ObjSpawnHolder);
-                boll.Init();
-                boll.Activate();
-                boll.SetColor(Color.red);
 
-                m_AsyncController.Run(() => boll.SetColorAsync(Color.blue));
+                yield return Awaite(() => boll.Configure());
+                yield return Awaite(() => boll.Load());
+                yield return Awaite(() => boll.Activate());
+                yield return Awaite(() => boll.SetColor(Color.red));
 
             }
 
         }
 
+        private void Run(IEnumerator func)
+            => m_AsyncController.Run(func);
 
-
+        private IYield Awaite(Action action)
+            => m_AsyncController.Awaite(action);
 
 
         private void Update()
