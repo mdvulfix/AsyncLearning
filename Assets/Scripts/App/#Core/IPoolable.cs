@@ -1,6 +1,6 @@
 namespace Core
 {
-    public interface IPoolable : IConfigurable
+    public interface IPoolable
     {
 
     }

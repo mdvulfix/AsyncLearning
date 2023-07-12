@@ -6,11 +6,25 @@ namespace Core
 {
     public abstract class ModelLoadable : MonoBehaviour
     {
-
+        [SerializeField] private bool m_isLoaded;
         [SerializeField] private bool m_isCached;
         [SerializeField] private bool m_isInitialized;
-        [SerializeField] private bool m_isLoaded;
-        [SerializeField] private bool m_isActivated;
+
+
+        public string Name => this.GetName();
+        public Type Type => this.GetType();
+
+        public GameObject Obj => gameObject;
+
+
+        public event Action<IResult> Loaded;
+        public event Action<IResult> Unloaded;
+
+        public event Action<IResult> Recorded;
+        public event Action<IResult> Cleared;
+
+        public event Action<IResult> Initialized;
+        public event Action<IResult> Disposed;
 
 
         public enum Params
@@ -19,17 +33,9 @@ namespace Core
             Factory
         }
 
-
-        public GameObject Obj => gameObject;
-
-        public static readonly int PARAMS_CONFIG = 0;
-        public static readonly int PARAMS_FACTORY = 1;
-
-
-
-        // SUBSCRIBE //
-        public abstract void Subscribe();
-        public abstract void Unsubscribe();
+        // LOAD //
+        public abstract void Load();
+        public abstract void Unload();
 
         // CACHE //
         public abstract void Record();
@@ -39,28 +45,21 @@ namespace Core
         public abstract void Init(params object[] args);
         public abstract void Dispose();
 
-        // LOAD //
-        public abstract void Load();
-        public abstract void Unload();
 
-        // ACTIVATE //
-        public abstract void Activate();
-        public abstract void Deactivate();
+        // COMPONENT //
+        public TComponent SetComponent<TComponent>()
+        where TComponent : UComponent
+            => gameObject.AddComponent<TComponent>();
+
+        public bool GetComponent<TComponent>(out TComponent component)
+        where TComponent : UComponent
+            => gameObject.TryGetComponent<TComponent>(out component);
+
+        public void SetParent(Transform parent)
+            => gameObject.transform.SetParent(parent);
 
 
-
-        // VERIFY //        
-        protected virtual bool VerifyInit(bool isDebug = true)
-        {
-            if (m_isInitialized == true)
-            {
-                if (isDebug) Debug.LogWarning($"{this}: instance was already initialized.");
-                return true;
-            }
-
-            return false;
-        }
-
+        // VERIFY //    
         protected virtual bool VerifyLoad(bool isDebug = true)
         {
             if (m_isInitialized == false)
@@ -79,12 +78,11 @@ namespace Core
             return false;
         }
 
-        protected virtual bool VerifyActivate(bool isDebug = true)
+        protected virtual bool VerifyInit(bool isDebug = true)
         {
-
-            if (m_isLoaded == false)
+            if (m_isInitialized == true)
             {
-                if (isDebug) Debug.LogWarning($"{this}: instance is not loaded. Activation was aborted!");
+                if (isDebug) Debug.LogWarning($"{this}: instance was already initialized.");
                 return true;
             }
 
@@ -93,79 +91,84 @@ namespace Core
 
 
         // CALLBACK //
-        protected virtual void OnCached(IResult result)
+        protected virtual void OnLoadComplete(IResult result, bool isDebag = true)
         {
-            m_isCached = result.State;
+            m_isLoaded = true;
 
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: cache state changed to {m_isCached}.");
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
 
+            Loaded?.Invoke(result);
         }
 
-        protected virtual void OnInitialized(IResult result)
+        protected virtual void OnUnloadComplete(IResult result, bool isDebag = true)
         {
-            m_isInitialized = result.State;
+            m_isLoaded = false;
 
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: initialization state changed to {m_isInitialized}. ");
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
 
-        }
-
-        protected virtual void OnLoaded(IResult result)
-        {
-            m_isLoaded = result.State;
-
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: load state changed to {m_isLoaded}.");
-        }
-
-        protected virtual void OnActivated(IResult result)
-        {
-
-            m_isActivated = result.State;
-
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: activation state changed to {m_isActivated}.");
-
+            Unloaded?.Invoke(result);
         }
 
 
+        protected virtual void OnRecordComplete(IResult result, bool isDebag = true)
+        {
+            m_isCached = true;
 
-        // COMPONENT //
-        public TComponent SetComponent<TComponent>()
-        where TComponent : UComponent
-            => gameObject.AddComponent<TComponent>();
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
 
-        public bool GetComponent<TComponent>(out TComponent component)
-        where TComponent : UComponent
-            => gameObject.TryGetComponent<TComponent>(out component);
+            Recorded?.Invoke(result);
+        }
 
-        public void SetParent(Transform parent)
-            => gameObject.transform.SetParent(parent);
+        protected virtual void OnClearComplete(IResult result, bool isDebag = true)
+        {
+            m_isCached = false;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Cleared?.Invoke(result);
+        }
+
+
+        protected virtual void OnInitComplete(IResult result, bool isDebag = true)
+        {
+            m_isInitialized = true;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Initialized?.Invoke(result);
+
+        }
+
+        protected virtual void OnDisposeComplete(IResult result, bool isDebag = true)
+        {
+            m_isInitialized = false;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Disposed?.Invoke(result);
+
+        }
 
 
         // UNITY //
-        protected virtual void OnEnable()
+        private void Awake()
+            => Load();
+
+        private void OnEnable()
             => Record();
-        protected virtual void OnDisable()
+
+        private void OnDisable()
             => Clear();
 
+        private void OnDestroy()
+            => Unload();
 
-    }
-
-
-
-    public interface IComponent
-    {
-        GameObject Obj { get; }
-
-        TComponent SetComponent<TComponent>()
-        where TComponent : UComponent;
-
-        bool GetComponent<TComponent>(out TComponent component)
-        where TComponent : UComponent;
-
-        void SetParent(Transform parent);
 
     }
 

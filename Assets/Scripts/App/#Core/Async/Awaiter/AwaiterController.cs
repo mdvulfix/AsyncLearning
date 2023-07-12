@@ -14,15 +14,7 @@ namespace Core.Async
             throw new System.NotImplementedException();
         }
 
-        public override void Subscribe()
-        {
-            throw new System.NotImplementedException();
-        }
 
-        public override void Unsubscribe()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }
 

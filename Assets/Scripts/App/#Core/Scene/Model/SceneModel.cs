@@ -13,64 +13,39 @@ namespace Core.Scene
 {
 
     [Serializable]
-    public abstract class SceneModel : ModelLoadable
+    public abstract class SceneModel : ModelActivable
     {
+        private bool m_isDebug = true;
 
         private SceneConfig m_Config;
 
         [SerializeField] private SceneIndex m_Index;
+        [SerializeField] private IView[] m_Views;
 
-        private List<IView> m_Views;
-
-
-        [Header("Debug"), SerializeField]
-        protected bool m_isDebug = true;
 
 
         public string Label => "Scene";
         public SceneIndex Index => m_Index;
 
-        public event Action<IResult> Cached;
-        public event Action<IResult> Initialized;
-        public event Action<IResult> Loaded;
-        public event Action<IResult> Activated;
+
         public event Action<IScene> LoadRequired;
 
 
-        // SUBSCRIBE //
-        public override void Subscribe()
-        {
-            Cached += OnCached;
-            Initialized += OnInitialized;
-            Loaded += OnLoaded;
-            Activated += OnActivated;
 
-        }
+        // LOAD //
+        public override void Load()
+            => OnLoadComplete(new Result(this, true, $"{Label} loaded."), m_isDebug);
 
-        public override void Unsubscribe()
-        {
-            Activated -= OnActivated;
-            Loaded -= OnLoaded;
-            Initialized -= OnInitialized;
-            Cached -= OnCached;
-        }
+        public override void Unload()
+            => OnUnloadComplete(new Result(this, true, $"{Label} unloaded."), m_isDebug);
 
 
         // CACHE //
         public override void Record()
-        {
-            var log = $"{this}: {Label} recorded.";
-            var result = new Result(this, true, log, m_isDebug);
-            Cached?.Invoke(result);
-        }
+            => OnRecordComplete(new Result(this, true, $"{Label} recorded to cache."), m_isDebug);
 
         public override void Clear()
-        {
-
-            var log = $"{this}: {Label} cleared.";
-            var result = new Result(this, false, log, m_isDebug);
-            Cached?.Invoke(result);
-        }
+            => OnClearComplete(new Result(this, true, $"{Label} cleared from cache."), m_isDebug);
 
 
         // CONFIGURE //
@@ -81,83 +56,39 @@ namespace Core.Scene
 
             if (args.Length > 0)
                 try { m_Config = (SceneConfig)args[config]; }
-                catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); return; }
+                catch { Debug.LogWarning($"{this}: {Label} config was not found. Configuration failed!"); return; }
 
             m_Index = m_Config.Index;
 
 
-
-            //var awaiterConfig = new AwaiterConfig();
-            //m_Awaiter = AwaiterDefault.Get();
-            //m_Awaiter.Init();
-            //m_Awaiter.Activate();
-
-
-            var log = $"{this}: {Label} initialized.";
-            var result = new Result(this, true, log, m_isDebug);
-            Initialized?.Invoke(result);
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
 
         }
 
         public override void Dispose()
         {
 
-            //m_AsyncController.Dispose();
 
-            //m_Awaiter.Deactivate();
-            //m_Awaiter.Dispose();
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
 
-
-            var log = $"{this}: {Label} disposed.";
-            var result = new Result(this, false, log, m_isDebug);
-
-            Initialized?.Invoke(result);
-
-        }
-
-
-        // LOAD //
-        public override void Load()
-        {
-            using (var asyncController = new AsyncController(new AsyncControllerConfig())) { }
-            //asyncController.Run(() => AwaitLoading());
-        }
-
-        public override void Unload()
-        {
-            using (var asyncController = new AsyncController(new AsyncControllerConfig())) { }
-            //asyncController.Run(() => AwaitUnloading());
         }
 
 
         // ACTIVATE //
         public override void Activate()
         {
-
-            Activated += OnActivated;
-
-            var obj = gameObject;
-
-            obj.SetActive(true);
-
-            var log = $"{this}: {Label} activated.";
-            var result = new Result(this, true, log, m_isDebug);
-            Initialized?.Invoke(result);
+            Obj.SetActive(true);
+            OnActivateComplete(new Result(this, true, $"{Label} activated."), m_isDebug);
 
         }
 
         public override void Deactivate()
         {
-            var obj = gameObject;
 
-            obj.SetActive(false);
-
-            var log = $"{this}: {Label} deactivated.";
-            var result = new Result(this, false, log, m_isDebug);
-            Activated?.Invoke(result);
-
-            Activated -= OnActivated;
+            Obj.SetActive(false);
+            OnDeactivateComplete(new Result(this, true, $"{Label} deactivated."), m_isDebug);
         }
+
 
         /*
         // ACTIVATE //
@@ -609,14 +540,9 @@ namespace Core
     }
 
 
-    public interface IScene : IConfigurable, ILoadable, IActivable
+    public interface IScene : ILoadable, ICacheable, IConfigurable, IActivable, IComponent
     {
         SceneIndex Index { get; }
-
-        event Action<IResult> Cached;
-        event Action<IResult> Loaded;
-        event Action<IResult> Initialized;
-        event Action<IResult> Activated;
 
     }
 

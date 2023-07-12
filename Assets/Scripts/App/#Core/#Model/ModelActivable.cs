@@ -4,16 +4,21 @@ using UComponent = UnityEngine.Component;
 
 namespace Core
 {
-    public abstract class ModelCacheable : MonoBehaviour
+    public abstract class ModelActivable : MonoBehaviour
     {
-
+        [SerializeField] private bool m_isLoaded;
         [SerializeField] private bool m_isCached;
         [SerializeField] private bool m_isInitialized;
+        [SerializeField] private bool m_isActivated;
 
         public string Name => this.GetName();
         public Type Type => this.GetType();
 
         public GameObject Obj => gameObject;
+
+
+        public event Action<IResult> Loaded;
+        public event Action<IResult> Unloaded;
 
         public event Action<IResult> Recorded;
         public event Action<IResult> Cleared;
@@ -21,12 +26,14 @@ namespace Core
         public event Action<IResult> Initialized;
         public event Action<IResult> Disposed;
 
+        public event Action<IResult> Activated;
+        public event Action<IResult> Deactivated;
+
         public enum Params
         {
             Config,
             Factory
         }
-
 
         // CACHE //
         public abstract void Record();
@@ -36,6 +43,13 @@ namespace Core
         public abstract void Init(params object[] args);
         public abstract void Dispose();
 
+        // LOAD //
+        public abstract void Load();
+        public abstract void Unload();
+
+        // ACTIVATE //
+        public abstract void Activate();
+        public abstract void Deactivate();
 
 
         // COMPONENT //
@@ -52,6 +66,23 @@ namespace Core
 
 
         // VERIFY //    
+        protected virtual bool VerifyLoad(bool isDebug = true)
+        {
+            if (m_isInitialized == false)
+            {
+                if (isDebug) Debug.LogWarning($"{this}: instance is not initialized. Load was aborted!");
+                return true;
+            }
+
+
+            if (m_isLoaded == true)
+            {
+                if (isDebug) Debug.LogWarning($"{this}: instance was already loaded.");
+                return true;
+            }
+
+            return false;
+        }
 
         protected virtual bool VerifyInit(bool isDebug = true)
         {
@@ -64,9 +95,40 @@ namespace Core
             return false;
         }
 
+        protected virtual bool VerifyActivate(bool isDebug = true)
+        {
+
+            if (m_isLoaded == false)
+            {
+                if (isDebug) Debug.LogWarning($"{this}: instance is not loaded. Activation was aborted!");
+                return true;
+            }
+
+            return false;
+        }
 
 
         // CALLBACK //
+        protected virtual void OnLoadComplete(IResult result, bool isDebag = true)
+        {
+            m_isLoaded = true;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Loaded?.Invoke(result);
+        }
+
+        protected virtual void OnUnloadComplete(IResult result, bool isDebag = true)
+        {
+            m_isLoaded = false;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Unloaded?.Invoke(result);
+        }
+
 
         protected virtual void OnRecordComplete(IResult result, bool isDebag = true)
         {
@@ -112,13 +174,43 @@ namespace Core
         }
 
 
+        protected virtual void OnActivateComplete(IResult result, bool isDebag = true)
+        {
+            m_isActivated = true;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Activated?.Invoke(result);
+
+        }
+
+        protected virtual void OnDeactivateComplete(IResult result, bool isDebag = true)
+        {
+            m_isActivated = false;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Deactivated?.Invoke(result);
+
+        }
+
         // UNITY //
+        private void Awake()
+            => Load();
+
         private void OnEnable()
             => Record();
 
         private void OnDisable()
             => Clear();
 
+        private void OnDestroy()
+            => Unload();
+
+
     }
+
 }
 

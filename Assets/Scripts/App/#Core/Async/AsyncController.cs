@@ -12,6 +12,8 @@ namespace Core.Async
     public class AsyncController : ModelConfigurable, IAsyncController
     {
 
+        private bool m_isDebug = true;
+
         private AsyncControllerConfig m_Config;
 
         [SerializeField] private static Transform m_AsyncHolder;
@@ -27,34 +29,13 @@ namespace Core.Async
 
         private IPoolController m_PoolController;
 
-        public event Action<IResult> Initialized;
+        public string Label => "AsyncController";
+
         public event Action<IAsyncInfo> FuncExecuted;
 
         public AsyncController() { }
         public AsyncController(params object[] args)
             => Init(args);
-
-
-        // SUBSCRIBE //
-        public override void Subscribe()
-        {
-            Initialized += OnInitialized;
-            //SignalProvider.SignalCalled += OnSignalCalled;
-
-        }
-
-        public override void Unsubscribe()
-        {
-
-            Initialized -= OnInitialized;
-
-            //SignalProvider.SignalCalled -= OnSignalCalled;
-
-        }
-
-
-
-
 
 
         public override void Init(params object[] args)
@@ -86,11 +67,19 @@ namespace Core.Async
             m_PoolController = PoolController.Get();
             m_PoolController.Init(poolControllerConfig);
 
+
+
+            AwaiterLimitUpdate();
+
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
+
         }
 
         public override void Dispose()
         {
             m_PoolController.Dispose();
+
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
 
         }
 
@@ -163,7 +152,9 @@ namespace Core.Async
         private void PushAwaiter(IAwaiter awaiter)
         {
             awaiter.Deactivate();
-            awaiter.ReadyChanged -= OnAwaiterReadyChanged;
+
+            awaiter.Initialized -= OnAwaiterInitialized;
+            awaiter.Disposed -= OnAwaiterDisposed;
 
             m_PoolController.Push(awaiter);
 
@@ -177,7 +168,8 @@ namespace Core.Async
                 awaiter.Init(new AwaiterConfig("Awaiter " + awaiter.GetHashCode(), m_AsyncHolder));
             }
 
-            awaiter.ReadyChanged += OnAwaiterReadyChanged;
+            awaiter.Initialized += OnAwaiterInitialized;
+            awaiter.Disposed += OnAwaiterDisposed;
             awaiter.Activate();
 
             return true;
@@ -212,6 +204,44 @@ namespace Core.Async
                 }
             }
         }
+
+
+        private void OnAwaiterInitialized(IResult result)
+        {
+            if (!result.State)
+                return;
+
+            var awaiter = result.Context.Convert<IAwaiter>();
+            m_AwaiterIsReady.Add(awaiter);
+
+            AwaiterLimitUpdate();
+        }
+
+        private void OnAwaiterDisposed(IResult result)
+        {
+            if (!result.State)
+                return;
+
+            var awaiter = result.Context.Convert<IAwaiter>();
+
+            if (m_AwaiterIsReady.Contains(awaiter))
+                m_AwaiterIsReady.Remove(awaiter);
+
+            AwaiterLimitUpdate();
+        }
+
+        private void OnAwaiterFuncComplite(IResult result)
+        {
+            if (!result.State)
+                return;
+
+            var awaiter = result.Context.Convert<IAwaiter>();
+            m_AwaiterIsReady.Add(awaiter);
+
+        }
+
+
+
 
         private void OnAwaiterReadyChanged(IResult result)
         {
@@ -257,9 +287,8 @@ namespace Core.Async
 
     public interface IAsyncController : IController, IConfigurable, IUpdatable
     {
-        event Action<IResult> Initialized;
-        event Action<IAsyncInfo> FuncExecuted;
 
+        event Action<IAsyncInfo> FuncExecuted;
 
         IEnumerator Run(IEnumerator func);
         IYield Awaite(Action action);

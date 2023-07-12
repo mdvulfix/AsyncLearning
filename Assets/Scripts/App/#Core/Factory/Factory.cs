@@ -37,6 +37,9 @@ namespace Core.Factory
 
     public abstract class FactoryModel
     {
+        public string Name => this.GetName();
+        public Type Type => this.GetType();
+
         protected Dictionary<Type, IConstructor> m_Constractors = new Dictionary<Type, IConstructor>(15);
 
         public abstract T Get<T>(params object[] args)

@@ -1,12 +1,22 @@
 using System;
 using UnityEngine;
+using UComponent = UnityEngine.Component;
 
 namespace Core
 {
     public abstract class ModelConfigurable
     {
-
         [SerializeField] private bool m_isInitialized;
+
+
+        public string Name => this.GetName();
+        public Type Type => this.GetType();
+
+
+        public event Action<IResult> Initialized;
+        public event Action<IResult> Disposed;
+
+
 
         public enum Params
         {
@@ -15,18 +25,12 @@ namespace Core
         }
 
 
-        // SUBSCRIBE //
-        public abstract void Subscribe();
-        public abstract void Unsubscribe();
-
-
         // CONFIGURE //
         public abstract void Init(params object[] args);
         public abstract void Dispose();
 
 
-
-        // VERIFY //        
+        // VERIFY //    
         protected virtual bool VerifyInit(bool isDebug = true)
         {
             if (m_isInitialized == true)
@@ -39,18 +43,31 @@ namespace Core
         }
 
 
-        protected virtual void OnInitialized(IResult result)
+        // CALLBACK //
+        protected virtual void OnInitComplete(IResult result, bool isDebag = true)
         {
-            m_isInitialized = result.State;
+            m_isInitialized = true;
 
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: initialization state changed to {m_isInitialized}. ");
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Initialized?.Invoke(result);
+
+        }
+
+        protected virtual void OnDisposeComplete(IResult result, bool isDebag = true)
+        {
+            m_isInitialized = false;
+
+            if (isDebag)
+                Debug.Log($"{this.GetName()}: {result.Log}");
+
+            Disposed?.Invoke(result);
 
         }
 
 
     }
-
 
 }
 

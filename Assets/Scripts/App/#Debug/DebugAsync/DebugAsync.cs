@@ -1,16 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using Core;
+using Core.Async;
+
 using Random = UnityEngine.Random;
 
-namespace Core.Async.Test
+namespace Test.Async
 {
     [Serializable]
-    public class DebugAsync : MonoBehaviour
+    public class DebugAsync : DebugModel
     {
-        [SerializeField] private GameObject m_Boll;
+
+        [SerializeField] private BollDefault m_Boll;
 
 
         private static Transform m_ObjSpawnHolder;
@@ -20,15 +23,25 @@ namespace Core.Async.Test
 
         private List<IUpdatable> m_Updatable;
 
-        private void Awake()
+
+
+        // LOAD //
+        public override void Load()
+        {
+            Init();
+            base.Load();
+        }
+
+        public override void Unload()
+        {
+            Dispose();
+            base.Unload();
+        }
+
+        public override void Init(params object[] args)
         {
             m_Updatable = new List<IUpdatable>(10);
 
-
-        }
-
-        private void OnEnable()
-        {
 
             if (m_ObjSpawnHolder == null)
                 m_ObjSpawnHolder = new GameObject("Spawn").transform;
@@ -37,9 +50,7 @@ namespace Core.Async.Test
                 m_ObjAsyncHolder = new GameObject("Async").transform;
 
 
-            m_AsyncController = new AsyncController();
-            var config = new AsyncControllerConfig(m_ObjAsyncHolder);
-            m_AsyncController.Init(config);
+            m_AsyncController = new AsyncController(new AsyncControllerConfig(m_ObjAsyncHolder));
 
             for (int i = 0; i < 1; i++)
             {
@@ -47,24 +58,31 @@ namespace Core.Async.Test
             }
 
 
+            if (m_Boll == null)
+            {
+                var label = "Boll";
+                var position = new Vector3(Random.Range(0f, 2f), Random.Range(0f, 3f), Random.Range(0f, 2f));
+                var boll = Spawn<BollDefault>(label, position, null, m_ObjSpawnHolder);
+            }
+
+            m_Boll.Init();
+            //m_Boll.Activate();
+            m_Boll.SetColor(Color.red);
+
             //foreach (var controller in m_Controllers)
             //    controller.Init();
 
-        }
-
-        private void OnDisable()
-        {
-            //foreach (var controller in m_Controllers)
-            //   controller.Dispose();
+            base.Init();
         }
 
         private void Start()
         {
-            Run(SpawnAsync());
+            //RunAsync(Spawn());
 
         }
 
-        private IEnumerator SpawnAsync()
+        /*
+        private IEnumerator Spawn()
         {
             for (int i = 0; i < 1; i++)
             {
@@ -72,16 +90,17 @@ namespace Core.Async.Test
                 var position = new Vector3(Random.Range(0f, 2f), Random.Range(0f, 3f), Random.Range(0f, 2f));
                 var boll = Spawn<BollDefault>(label, position, m_Boll, m_ObjSpawnHolder);
 
-                yield return Awaite(() => boll.Configure());
                 yield return Awaite(() => boll.Load());
+                yield return Awaite(() => boll.Init());
                 yield return Awaite(() => boll.Activate());
                 yield return Awaite(() => boll.SetColor(Color.red));
 
             }
 
         }
+        */
 
-        private void Run(IEnumerator func)
+        private void RunAsync(IEnumerator func)
             => m_AsyncController.Run(func);
 
         private IYield Awaite(Action action)

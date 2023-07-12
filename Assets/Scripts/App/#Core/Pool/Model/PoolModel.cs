@@ -8,35 +8,14 @@ namespace Core.Pool
     public abstract class PoolModel : ModelConfigurable
     {
 
-
         private PoolConfig m_Config;
 
         private bool m_isDebug = true;
 
         private Stack<IPoolable> m_Poolables = new Stack<IPoolable>(100);
 
-
+        public string Label => "Pool";
         public int Count => m_Poolables.Count;
-
-        public event Action<IResult> Initialized;
-
-
-        // SUBSCRIBE //
-        public override void Subscribe()
-        {
-
-            Initialized += OnInitialized;
-
-
-        }
-
-        public override void Unsubscribe()
-        {
-
-
-            Initialized -= OnInitialized;
-
-        }
 
 
 
@@ -47,16 +26,10 @@ namespace Core.Pool
 
             if (args.Length > 0)
                 try { m_Config = (PoolConfig)args[config]; }
-                catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); return; }
+                catch { Debug.LogWarning($"{this}: {Label} config was not found. Configuration failed!"); return; }
 
 
-
-            Subscribe();
-
-            var log = $"{this}: initialized.";
-            var result = new Result(this, true, log, m_isDebug);
-
-            Initialized?.Invoke(result);
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
 
         }
 
@@ -64,12 +37,7 @@ namespace Core.Pool
         public override void Dispose()
         {
 
-            var log = $"{this}: disposed.";
-            var result = new Result(this, false, log, m_isDebug);
-
-            Initialized?.Invoke(result);
-
-            Unsubscribe();
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
         }
 
 
@@ -125,10 +93,8 @@ namespace Core.Pool
         }
     }
 
-    public interface IPool : IEnumerable, IConfigurable
+    public interface IPool : IConfigurable, IEnumerable
     {
-        event Action<IResult> Initialized;
-
         int Count { get; }
 
         bool Push(IPoolable poolable);

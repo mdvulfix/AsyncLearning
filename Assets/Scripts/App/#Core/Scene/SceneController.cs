@@ -14,31 +14,22 @@ namespace Core.Scene
     [Serializable]
     public class SceneController : ModelConfigurable, ISceneController
     {
+        private bool m_isDebug = true;
+
+        private SceneControllerConfig m_Config;
 
         //private IScene m_Scene;
         //private ISignal m_SignalSceneActivate;
 
-        [SerializeField] private SceneLogin m_SceneLogin;
 
-        private IFactory m_SceneFactory;
-        private List<IScene> m_Scenes;
+        private IScene[] m_Scenes;
         private IScene m_SceneActive;
 
 
+        private IFactory m_SceneFactory;
 
-        [Header("Stats")]
-        [SerializeField] private bool m_isInitialized;
+        public string Label => "SceneController";
 
-
-        [Header("Debug")]
-        [SerializeField] protected bool m_isDebug = true;
-
-        [Header("Config")]
-        [SerializeField] protected SceneControllerConfig m_Config;
-
-
-
-        public event Action<IResult> Initialized;
         public event Action<IResult> SceneLoaded;
         public event Action<IResult> SceneActivated;
 
@@ -51,10 +42,8 @@ namespace Core.Scene
 
 
         // SUBSCRIBE //
-        public override void Subscribe()
+        public virtual void Subscribe()
         {
-            Initialized += OnInitialized;
-
             foreach (var scene in m_Scenes)
             {
                 //scene.LoadRequired += OnSceneLoadRequired;
@@ -66,7 +55,7 @@ namespace Core.Scene
 
         }
 
-        public override void Unsubscribe()
+        public virtual void Unsubscribe()
         {
             foreach (var scene in m_Scenes)
             {
@@ -75,9 +64,6 @@ namespace Core.Scene
                 scene.Activated -= OnSceneActivated;
                 scene.Loaded -= OnSceneLoaded;
             }
-
-            Initialized -= OnInitialized;
-
             //SignalProvider.SignalCalled -= OnSignalCalled;
 
         }
@@ -93,16 +79,17 @@ namespace Core.Scene
                 catch { if (m_isDebug) Debug.LogWarning("Config was not found. Configuration failed!"); return; }
 
 
-            m_SceneFactory = m_Config.SceneFactory;
-            m_Scenes = new List<IScene>();
-            m_SceneLogin = Register<SceneLogin>(SceneIndex.Login);
+            //m_SceneFactory = m_Config.SceneFactory;
+            //m_Scenes = new List<IScene>();
+            //m_SceneLogin = Register<SceneLogin>(SceneIndex.Login);
+
+
+            //foreach (var scene in m_Scenes)
+            //   scene.Init(new SceneConfig());
 
 
             Subscribe();
-
-            var log = $"{this}: initialized.";
-            var result = new Result(this, true, log, m_isDebug);
-            Initialized?.Invoke(result);
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
 
         }
 
@@ -111,10 +98,7 @@ namespace Core.Scene
             foreach (var scene in m_Scenes)
                 scene.Dispose();
 
-            var log = $"{this}: disposed.";
-            var result = new Result(this, false, log, m_isDebug);
-            Initialized?.Invoke(result);
-
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
             Unsubscribe();
 
         }
@@ -192,7 +176,7 @@ namespace Core.Scene
         {
             var factory = (m_SceneFactory != null) ? m_SceneFactory : new SceneFactory();
             var scene = factory.Get<TScene>(new SceneConfig(index));
-            m_Scenes.Add(scene);
+            //m_Scenes.Add(scene);
             return scene;
 
         }
@@ -280,7 +264,7 @@ namespace Core.Scene
 
 namespace Core
 {
-    public interface ISceneController : IController
+    public interface ISceneController : IController, ISubscriber
     {
         event Action<IResult> SceneLoaded;
         event Action<IResult> SceneActivated;

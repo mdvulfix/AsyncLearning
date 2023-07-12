@@ -20,16 +20,8 @@ namespace Core.Scene
             => Init(args);
 
 
-        public override void Init(params object[] args)
+        public override void Load()
         {
-            if (args.Length > 0)
-            {
-                base.Init(args);
-                return;
-            }
-
-            // CONFIGURE BY DEFAULT //
-            Debug.LogWarning($"{this}: {Label} will be initialized by default!");
 
             //var signals = new List<ISignal>();
             //signals.Add(m_SceneMenuActivate = new SignalSceneActivate(СacheProvider<SceneMenu>.Get()));
@@ -39,14 +31,22 @@ namespace Core.Scene
             //base.Init(config);
             var index = SceneIndex.Login;
             var config = new SceneConfig(index);
-            base.Init(config);
+            Init(config);
+            base.Load();
 
         }
 
 
+        public override void Unload()
+        {
+            Dispose();
+            base.Unload();
+        }
+
         // FACTORY //
         public static SceneLogin Get(IFactory factory, params object[] args)
             => Get<SceneLogin>(factory, args);
+
     }
 
 

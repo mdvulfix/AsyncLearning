@@ -48,37 +48,21 @@ namespace Core.Pool
 
     public class PoolController : ModelConfigurable, IPoolController
     {
+
+        private bool m_isDebug = true;
+        private PoolControllerConfig m_Config;
+
         private static Transform m_PoolHolder;
 
         private IPool m_Pool;
 
-        [Header("Debug")]
-        [SerializeField] protected bool m_isDebug = true;
+        public string Label => "PoolController";
 
-        [Header("Config")]
-        [SerializeField] protected PoolControllerConfig m_Config;
-
-        public event Action<IResult> Initialized;
 
 
         public PoolController() { }
         public PoolController(params object[] args)
             => Init(args);
-
-
-
-        // SUBSCRIBE //
-        public override void Subscribe()
-        {
-            Initialized += OnInitialized;
-
-        }
-
-        public override void Unsubscribe()
-        {
-            Initialized -= OnInitialized;
-
-        }
 
 
         public override void Init(params object[] args)
@@ -103,12 +87,9 @@ namespace Core.Pool
                 m_Pool.Init(poolConfig);
             }
 
-            Subscribe();
 
-            var log = $"{this}: initialized.";
-            var result = new Result(this, true, log, m_isDebug);
-            Initialized?.Invoke(result);
 
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
         }
 
 
@@ -121,11 +102,7 @@ namespace Core.Pool
             //m_Awaiter.Deactivate();
             //m_Awaiter.Dispose();
 
-            var log = $"{this}: disposed.";
-            var result = new Result(this, false, log, m_isDebug);
-            Initialized?.Invoke(result);
-
-            Unsubscribe();
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
 
         }
 

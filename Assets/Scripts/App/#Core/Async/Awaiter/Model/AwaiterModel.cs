@@ -7,7 +7,7 @@ using Core.Factory;
 
 namespace Core.Async
 {
-    public class AwaiterModel : ModelCacheable
+    public class AwaiterModel : ModelActivable
     {
 
         private AwaiterConfig m_Config;
@@ -30,127 +30,11 @@ namespace Core.Async
 
         public bool IsReady => m_isReady;
 
-        public event Action<IResult> Cached;
-        public event Action<IResult> Initialized;
-        public event Action<IResult> Activated;
-
-        public event Action<IResult> ReadyChanged;
         public event Action FuncExecuted;
 
         public static string PREF_FOLDER = "Prefabs";
 
 
-
-        // SUBSCRIBE //
-        public override void Subscribe()
-        {
-            Cached += OnCached;
-            Initialized += OnInitialized;
-            Activated += OnActivated;
-            ReadyChanged += OnReadyChanged;
-
-        }
-
-        public override void Unsubscribe()
-        {
-            ReadyChanged -= OnReadyChanged;
-            Activated -= OnActivated;
-            Initialized -= OnInitialized;
-            Cached -= OnCached;
-        }
-
-
-        // CONFIGURE //
-        public override void Init(params object[] args)
-        {
-            var config = (int)Params.Config;
-
-            if (args.Length > 0)
-                try { m_Config = (AwaiterConfig)args[config]; }
-                catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); return; }
-
-
-
-
-            transform.name = m_Config.Label;
-
-            if (m_Parent == null)
-                m_Parent = m_Config.Parent;
-
-            SetParent(m_Parent);
-
-
-
-            var log = $"{this}: {Label} initialized.";
-            var result = new Result(this, true, log, m_isDebug);
-
-            Subscribe();
-            Record();
-            Initialized?.Invoke(result);
-
-        }
-
-        public override void Dispose()
-        {
-            Reset();
-            Clear();
-
-            var log = $"{this}: {Label} disposed.";
-            var result = new Result(this, false, log, m_isDebug);
-
-            Initialized?.Invoke(result);
-            Unsubscribe();
-
-        }
-
-
-        public override void Record()
-        {
-            var log = $"{this}: {Label} recorded.";
-            var result = new Result(this, true, log, m_isDebug);
-            Cached?.Invoke(result);
-        }
-
-        public override void Clear()
-        {
-            var log = $"{this}: {Label} cleared.";
-            var result = new Result(this, false, log, m_isDebug);
-            Cached?.Invoke(result);
-        }
-
-
-
-        // ACTIVATE //
-        public override void Activate()
-        {
-            var obj = gameObject;
-
-            obj.SetActive(true);
-
-
-
-            var log = $"{this}: {Label} activated.";
-            var result = new Result(this, true, log, m_isDebug);
-            Activated?.Invoke(result);
-
-            ReadyChanged?.Invoke(result);
-
-        }
-
-        public override void Deactivate()
-        {
-            var obj = gameObject;
-
-            Reset();
-            obj.SetActive(false);
-
-
-            var log = $"{this}: {Label} deactivated.";
-            var result = new Result(this, false, log, m_isDebug);
-            Activated?.Invoke(result);
-
-            ReadyChanged?.Invoke(result);
-        }
 
 
 
@@ -166,8 +50,6 @@ namespace Core.Async
 
             Resolve();
         }
-
-
 
 
         public IYield Awaite(Action func)
@@ -187,9 +69,6 @@ namespace Core.Async
             //Complite();
 
         }
-
-
-
 
 
         public void Resolve()
@@ -213,22 +92,66 @@ namespace Core.Async
         }
 
 
+        // LOAD //
+        public override void Load()
+            => OnLoadComplete(new Result(this, true, $"{Label} loaded."), m_isDebug);
 
-        protected virtual void OnReadyChanged(IResult result)
+        public override void Unload()
+            => OnUnloadComplete(new Result(this, true, $"{Label} unloaded."), m_isDebug);
+
+        // CACHE //
+        public override void Record()
+            => OnRecordComplete(new Result(this, true, $"{Label} recorded to cache."), m_isDebug);
+
+        public override void Clear()
+            => OnClearComplete(new Result(this, true, $"{Label} cleared from cache."), m_isDebug);
+
+
+        // CONFIGURE //
+        public override void Init(params object[] args)
         {
-            m_isReady = result.State;
+            var config = (int)Params.Config;
 
-            if (result.LogSend)
-                Debug.Log($"{result.Context}: ready state changed to {m_isReady}.");
+            if (args.Length > 0)
+                try { m_Config = (AwaiterConfig)args[config]; }
+                catch { Debug.LogWarning($"{this}: {Label} config was not found. Configuration failed!"); return; }
 
+
+            transform.name = m_Config.Label;
+
+            if (m_Parent == null)
+                m_Parent = m_Config.Parent;
+
+            SetParent(m_Parent);
+
+            OnInitComplete(new Result(this, true, $"{Label} initialized."), m_isDebug);
+        }
+
+        public override void Dispose()
+        {
+            Reset();
+            OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
 
         }
 
 
+        // ACTIVATE //
+        public override void Activate()
+        {
+            Resolve();
 
+            Obj.SetActive(true);
+            OnActivateComplete(new Result(this, true, $"{Label} activated."), m_isDebug);
 
+        }
 
+        public override void Deactivate()
+        {
+            Reset();
 
+            Obj.SetActive(false);
+            OnDeactivateComplete(new Result(this, true, $"{Label} deactivated."), m_isDebug);
+        }
 
 
         // FACTORY //
@@ -250,6 +173,13 @@ namespace Core.Async
 
 
 
+
+
+
+
+
+
+
     }
 
     public struct AwaiterConfig : IConfig
@@ -265,16 +195,9 @@ namespace Core.Async
 
     }
 
-    public interface IAwaiter : IPoolable, IActivable, ICacheable, IComponent
+    public interface IAwaiter : IConfigurable, ICacheable, IActivable, IComponent, IPoolable
     {
         bool IsReady { get; }
-
-        event Action<IResult> Cached;
-        event Action<IResult> Initialized;
-        event Action<IResult> Activated;
-
-        event Action FuncExecuted;
-        event Action<IResult> ReadyChanged;
 
         //void FuncRun(Func<Action<bool>, IEnumerator> func);
         IEnumerator Run(IEnumerator func);
