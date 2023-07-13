@@ -181,7 +181,7 @@ namespace Core.Async
         {
             var info = new FuncAsyncInfo(awaiter, func);
             m_FuncExecuteQueue.Add(info);
-            return new YieldWaitForAction(func);
+            return null; //new YieldWaitForAction(func);
         }
 
         private void FuncQueueExecute()

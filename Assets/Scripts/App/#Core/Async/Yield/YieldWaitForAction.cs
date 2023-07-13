@@ -3,8 +3,11 @@ using UnityEngine;
 
 namespace Core.Async
 {
+
+    /*
     public class YieldWaitForAction : YieldModel, IYield
     {
+
 
         protected bool m_isComplete = false;
         protected Action m_Resolve;
@@ -42,5 +45,6 @@ namespace Core.Async
         }
 
     }
+    */
 
 }

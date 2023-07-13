@@ -7,10 +7,11 @@ namespace Core
     {
         bool keepWaiting { get; }
 
-        Action Func { get; }
+        Func<bool> Func { get; }
 
-        IYield Run(Action action);
-        IYield Resolve();
+        event Action Resolved;
+
+        void Resolve();
 
     }
 }

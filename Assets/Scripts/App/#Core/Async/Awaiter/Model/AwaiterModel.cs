@@ -54,10 +54,10 @@ namespace Core.Async
 
         public IYield Awaite(Action func)
         {
-            var awaiteFunc = new YieldWaitForAction(func);
-            Run(awaiteFunc);
+            //var awaiteFunc = new YieldWaitForAction(func);
+            // Run(awaiteFunc);
             //func.Invoke();
-            return awaiteFunc;
+            return null; //awaiteFunc;
 
 
             //StopCoroutine(nameof(AsyncExecute));

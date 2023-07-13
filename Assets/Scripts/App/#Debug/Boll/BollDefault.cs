@@ -17,6 +17,7 @@ namespace Test
         [SerializeField] private Color m_ColorDefault;
         [SerializeField] private Color m_Color;
 
+
         public BollDefault() { }
         public BollDefault(params object[] args)
             => Init(args);
@@ -50,55 +51,69 @@ namespace Test
             base.Unload();
         }
 
-        private void Start()
+        private IEnumerator Start()
         {
-            StartCoroutine(WaitForTimer(2));
+
+            yield return null;
+
+            var delay = 10f;
+            var timer = delay;
+            yield return new WaitForFunc(() => WaitForTimer(ref timer));
+
+        }
+
+        private void Update()
+        {
+
+            var isKeyDown = false;
+
+            isKeyDown = Input.GetKeyDown(KeyCode.Space) ? true : false;
+
+            if (isKeyDown)
+                Debug.Log($"{this.GetName()} Key {KeyCode.Space} is down!");
+
         }
 
 
+
+        public class WaitForFunc : YieldModel, IYield
+        {
+
+            public WaitForFunc(Func<bool> func)
+            {
+                Func = func;
+            }
+
+
+
+        }
+
+
+        public bool WaitForKeyUp(KeyCode key)
+        {
+            if (Input.GetKeyUp(key))
+                return true;
+
+
+            return false;
+        }
+
+
+
+        public bool WaitForTimer(ref float timer)
+        {
+            timer -= Time.deltaTime;
+
+            if (timer <= 0)
+                return true;
+
+            return false;
+
+        }
 
         public override void SetColor(Color color)
         {
             m_Renderer.material.color = color;
-        }
-
-
-
-        public IYield GetYield(float delay)
-        {
-            return new YieldWaitForAction(() => WaitForTimer(delay));
-
-        }
-
-
-
-
-        public IEnumerator WaitForTimer(float delay)
-        {
-            Debug.Log($"{this.GetName()} Delay {delay}. Timer started.");
-
-            while (delay > 0)
-            {
-                Debug.Log($"{this.GetName()} Delay {delay}");
-                yield return null;
-                delay -= Time.deltaTime;
-            }
-
-            Debug.Log($"{this.GetName()} Delay {delay}. Timer finished.");
-        }
-
-        public bool Timer(float delay)
-        {
-
-            delay -= Time.deltaTime;
-            Debug.Log($"{this.GetName()} Delay {delay}.");
-            if (delay <= 0)
-                return false;
-            else
-                return true;
-
-
-
         }
 
 
