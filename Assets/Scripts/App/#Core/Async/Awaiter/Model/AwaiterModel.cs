@@ -37,6 +37,15 @@ namespace Core.Async
 
 
 
+        public void Execute(IEnumerator func)
+        {
+            if (m_Coroutine != null)
+                StopCoroutine(m_Coroutine);
+
+            StartCoroutine(func);
+        }
+
+
 
         public IEnumerator Run(IEnumerator func)
         {
@@ -91,13 +100,15 @@ namespace Core.Async
             m_isReady = true;
         }
 
-
+        /*
         // LOAD //
         public override void Load()
             => OnLoadComplete(new Result(this, true, $"{Label} loaded."), m_isDebug);
 
         public override void Unload()
             => OnUnloadComplete(new Result(this, true, $"{Label} unloaded."), m_isDebug);
+
+        */
 
         // CACHE //
         public override void Record()
@@ -200,6 +211,7 @@ namespace Core.Async
         bool IsReady { get; }
 
         //void FuncRun(Func<Action<bool>, IEnumerator> func);
+        void Execute(IEnumerator func);
         IEnumerator Run(IEnumerator func);
         IYield Awaite(Action func);
         void Resolve();

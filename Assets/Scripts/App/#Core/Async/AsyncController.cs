@@ -23,9 +23,9 @@ namespace Core.Async
         private Func<IAwaiter> GetAwaiterFunc;
 
         private static List<IAwaiter> m_AwaiterIsReady;
-        private int m_AwaiterIsReadyLimit = 1;
+        private int m_AwaiterIsReadyLimit = 3;
 
-        private static List<IAsyncInfo> m_FuncExecuteQueue;
+        private static Stack<IAsyncInfo> m_FuncExecuteQueue;
 
         private IPoolController m_PoolController;
 
@@ -46,6 +46,8 @@ namespace Core.Async
                 try { m_Config = (AsyncControllerConfig)args[config]; }
                 catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); return; }
 
+            m_AsyncHolder = m_Config.AsyncHolder;
+
 
             if (m_AsyncHolder == null)
                 m_AsyncHolder = new GameObject("Async").transform;
@@ -54,7 +56,7 @@ namespace Core.Async
                 m_AwaiterIsReady = new List<IAwaiter>(m_AwaiterIsReadyLimit);
 
             if (m_FuncExecuteQueue == null)
-                m_FuncExecuteQueue = new List<IAsyncInfo>(100);
+                m_FuncExecuteQueue = new Stack<IAsyncInfo>(100);
 
             // SET AWAITER //
             if (m_AwaiterFactory == null)
@@ -90,6 +92,21 @@ namespace Core.Async
 
 
 
+
+        public void Execute(IEnumerator func)
+        {
+            if (GetAwaiter(out var awaiter))
+                awaiter.Execute(func);
+
+
+            //return FuncQueueSetAwaiter(awaiter, func);
+            Debug.LogWarning($"{this}: awaiter is not found!");
+            m_FuncExecuteQueue.Push(new FuncAsyncInfo(func));
+        }
+
+
+        /*
+
         public IEnumerator Run(IEnumerator func)
         {
             if (!GetAwaiter(out var awaiter))
@@ -104,14 +121,17 @@ namespace Core.Async
 
         public IYield Awaite(Action func)
         {
+
+
             if (!GetAwaiter(out var awaiter))
                 throw new Exception("Awaiter was not found!");
 
-            return awaiter.Awaite(func);
+            yield return awaiter.Run(func);
+
             //return FuncQueueSetAwaiter(awaiter, func);
         }
 
-
+        */
         private bool GetAwaiter(out IAwaiter awaiter)
         {
             awaiter = null;
@@ -119,9 +139,13 @@ namespace Core.Async
             if ((m_AwaiterIsReady.Count < m_AwaiterIsReadyLimit))
                 AwaiterLimitUpdate();
 
+            if ((m_AwaiterIsReady.Count > 0))
+            {
+                awaiter = m_AwaiterIsReady.First();
+                return true;
+            }
 
-            awaiter = m_AwaiterIsReady.First();
-            return true;
+            return false;
         }
 
         private void AwaiterLimitUpdate()
@@ -177,30 +201,23 @@ namespace Core.Async
         }
 
 
-        private IYield FuncQueueSetAwaiter(IAwaiter awaiter, Action func)
-        {
-            var info = new FuncAsyncInfo(awaiter, func);
-            m_FuncExecuteQueue.Add(info);
-            return null; //new YieldWaitForAction(func);
-        }
 
         private void FuncQueueExecute()
         {
             if (m_FuncExecuteQueue?.Count == 0)
                 return;
 
-            var funcsReadyToBeExecuted = (from IAsyncInfo funcInfo in m_FuncExecuteQueue
-                                          where funcInfo.Awaiter.IsReady == true
-                                          select funcInfo).ToArray();
+            var awaiterIsReadyArr = (from IAwaiter awaiter in m_AwaiterIsReady
+                                     where awaiter.IsReady == true
+                                     select awaiter).ToArray();
 
-            if (funcsReadyToBeExecuted.Length > 0)
+            if (awaiterIsReadyArr.Length > 0)
             {
-                foreach (var info in funcsReadyToBeExecuted)
+                if (m_FuncExecuteQueue.Count > 0)
                 {
-                    if (m_FuncExecuteQueue.Contains(info))
-                        m_FuncExecuteQueue.Remove(info);
-
-                    info.Awaiter.Awaite(info.Func);
+                    var info = m_FuncExecuteQueue.Pop();
+                    info.Awaiter = awaiterIsReadyArr.First();
+                    info.Awaiter.Execute(info.Func);
                 }
             }
         }
@@ -214,7 +231,6 @@ namespace Core.Async
             var awaiter = result.Context.Convert<IAwaiter>();
             m_AwaiterIsReady.Add(awaiter);
 
-            AwaiterLimitUpdate();
         }
 
         private void OnAwaiterDisposed(IResult result)
@@ -227,7 +243,6 @@ namespace Core.Async
             if (m_AwaiterIsReady.Contains(awaiter))
                 m_AwaiterIsReady.Remove(awaiter);
 
-            AwaiterLimitUpdate();
         }
 
         private void OnAwaiterFuncComplite(IResult result)
@@ -290,8 +305,9 @@ namespace Core.Async
 
         event Action<IAsyncInfo> FuncExecuted;
 
-        IEnumerator Run(IEnumerator func);
-        IYield Awaite(Action action);
+        void Execute(IEnumerator func);
+        //IEnumerator Run(IEnumerator func);
+        //IYield Awaite(Action action);
 
 
 
@@ -309,16 +325,22 @@ namespace Core.Async
 
     public struct FuncAsyncInfo : IAsyncInfo
     {
-        public IAwaiter Awaiter { get; private set; }
-        public Action Func { get; private set; }
+
+        public IEnumerator Func { get; private set; }
+        public IAwaiter Awaiter { get; set; }
 
 
 
-        public FuncAsyncInfo(IAwaiter awaiter, Action func)
+        public FuncAsyncInfo(IEnumerator func, IAwaiter awaiter)
         {
             Func = func;
             Awaiter = awaiter;
+        }
 
+        public FuncAsyncInfo(IEnumerator func)
+        {
+            Func = func;
+            Awaiter = null;
         }
 
 
@@ -338,8 +360,8 @@ namespace Core.Async
     */
     public interface IAsyncInfo
     {
-        IAwaiter Awaiter { get; }
-        Action Func { get; }
+        IAwaiter Awaiter { get; set; }
+        IEnumerator Func { get; }
 
     }
 

@@ -20,13 +20,6 @@ namespace Test
         public abstract void SetColor(Color color);
 
 
-        // LOAD //
-        public override void Load()
-            => OnLoadComplete(new Result(this, true, $"{Label} loaded."), m_isDebug);
-
-        public override void Unload()
-            => OnUnloadComplete(new Result(this, true, $"{Label} unloaded."), m_isDebug);
-
         // CACHE //
         public override void Record()
             => OnRecordComplete(new Result(this, true, $"{Label} recorded to cache."), m_isDebug);

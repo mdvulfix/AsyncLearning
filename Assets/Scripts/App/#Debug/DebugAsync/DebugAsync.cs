@@ -13,6 +13,8 @@ namespace Test.Async
     public class DebugAsync : DebugModel
     {
 
+        [SerializeField] private GameObject m_ObjBoll;
+
         [SerializeField] private BollDefault m_Boll;
 
 
@@ -29,11 +31,14 @@ namespace Test.Async
         public override void Load()
         {
             Init();
+            Activate();
             base.Load();
         }
 
         public override void Unload()
         {
+
+            Deactivate();
             Dispose();
             base.Unload();
         }
@@ -65,9 +70,9 @@ namespace Test.Async
                 var boll = Spawn<BollDefault>(label, position, null, m_ObjSpawnHolder);
             }
 
-            m_Boll.Init();
+            //m_Boll.Init();
             //m_Boll.Activate();
-            m_Boll.SetColor(Color.red);
+            //m_Boll.SetColor(Color.red);
 
             //foreach (var controller in m_Controllers)
             //    controller.Init();
@@ -77,42 +82,106 @@ namespace Test.Async
 
         private void Start()
         {
-            //RunAsync(Spawn());
+            ExecuteAsync(Spawn());
+            //Spawn();
 
         }
 
-        /*
+
         private IEnumerator Spawn()
         {
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 5; i++)
             {
                 var label = "Boll " + i;
                 var position = new Vector3(Random.Range(0f, 2f), Random.Range(0f, 3f), Random.Range(0f, 2f));
-                var boll = Spawn<BollDefault>(label, position, m_Boll, m_ObjSpawnHolder);
+                var boll = Spawn<BollDefault>(label, position, m_ObjBoll, m_ObjSpawnHolder);
 
-                yield return Awaite(() => boll.Load());
-                yield return Awaite(() => boll.Init());
-                yield return Awaite(() => boll.Activate());
-                yield return Awaite(() => boll.SetColor(Color.red));
+                boll.Init();
+                boll.Activate();
+                boll.SetColor(Color.red);
+
+                yield return new WaitForSeconds(1);
+                yield return new WaitForFunc(() => boll.SetColor(Color.red));
+                yield return new WaitForSeconds(2);
+                yield return new WaitForFunc(() => boll.SetColor(Color.blue));
+                //yield return Awaite(() => boll.Activate());
+                //yield return Awaite(() => boll.SetColor(Color.red));
 
             }
 
         }
-        */
 
-        private void RunAsync(IEnumerator func)
-            => m_AsyncController.Run(func);
 
-        private IYield Awaite(Action action)
-            => m_AsyncController.Awaite(action);
+        private void ExecuteAsync(IEnumerator func)
+            => m_AsyncController.Execute(func);
+
+        //private IYield Awaite(Action action)
+        //    => m_AsyncController.Awaite(action);
+
+
+        private IEnumerator Run()
+        {
+
+            yield return null;
+
+            var delay = 10f;
+            var timer = delay;
+            yield return new WaitForFunc(() => WaitForTimer(ref timer));
+
+        }
+
+
+        public IEnumerator SetColorAsync(BollDefault boll, Color color)
+        {
+            yield return new WaitForFunc(() => boll.SetColor(color));
+            yield return new WaitForSeconds(2);
+            yield return new WaitForFunc(() => boll.SetColor(color));
+        }
+
+
+
+
+
+        public bool WaitForKeyUp(KeyCode key)
+        {
+            if (Input.GetKeyUp(key))
+                return true;
+
+
+            return false;
+        }
+
+
+
+        public bool WaitForTimer(ref float timer)
+        {
+            timer -= Time.deltaTime;
+
+            if (timer <= 0)
+                return true;
+
+            return false;
+
+        }
 
 
         private void Update()
         {
             foreach (var controller in m_Updatable)
                 controller.Update();
-        }
 
+
+            var isKeyDown = false;
+
+            isKeyDown = Input.GetKeyDown(KeyCode.Space) ? true : false;
+
+            if (isKeyDown)
+                Debug.Log($"{this.GetName()} Key {KeyCode.Space} is down!");
+
+
+            m_AsyncController.Update();
+
+        }
 
         private T Spawn<T>(string name, Vector3 position, GameObject prefab, Transform parent)
         where T : Component
@@ -139,6 +208,5 @@ namespace Test.Async
 
             return obj.GetComponent<T>();
         }
-
     }
 }

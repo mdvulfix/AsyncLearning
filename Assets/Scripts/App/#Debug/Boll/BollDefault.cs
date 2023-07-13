@@ -9,7 +9,7 @@ namespace Test
 {
 
     [Serializable]
-    public class BollDefault : BollLoadable
+    public class BollDefault : BollActivable
     {
 
         private MeshRenderer m_Renderer;
@@ -23,7 +23,7 @@ namespace Test
             => Init(args);
 
 
-        public override void Load()
+        public override void Init(params object[] args)
         {
             //var delay = 3f;
             //StopCoroutine(nameof(SetColorAsync));
@@ -38,78 +38,9 @@ namespace Test
 
             SetColor(m_ColorDefault);
 
-
-
-            Init();
-            base.Load();
+            base.Init();
         }
 
-
-        public override void Unload()
-        {
-            Dispose();
-            base.Unload();
-        }
-
-        private IEnumerator Start()
-        {
-
-            yield return null;
-
-            var delay = 10f;
-            var timer = delay;
-            yield return new WaitForFunc(() => WaitForTimer(ref timer));
-
-        }
-
-        private void Update()
-        {
-
-            var isKeyDown = false;
-
-            isKeyDown = Input.GetKeyDown(KeyCode.Space) ? true : false;
-
-            if (isKeyDown)
-                Debug.Log($"{this.GetName()} Key {KeyCode.Space} is down!");
-
-        }
-
-
-
-        public class WaitForFunc : YieldModel, IYield
-        {
-
-            public WaitForFunc(Func<bool> func)
-            {
-                Func = func;
-            }
-
-
-
-        }
-
-
-        public bool WaitForKeyUp(KeyCode key)
-        {
-            if (Input.GetKeyUp(key))
-                return true;
-
-
-            return false;
-        }
-
-
-
-        public bool WaitForTimer(ref float timer)
-        {
-            timer -= Time.deltaTime;
-
-            if (timer <= 0)
-                return true;
-
-            return false;
-
-        }
 
         public override void SetColor(Color color)
         {

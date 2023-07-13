@@ -13,7 +13,7 @@ namespace Core.Scene
 {
 
     [Serializable]
-    public abstract class SceneModel : ModelActivable
+    public abstract class SceneModel : ModelLoadable
     {
         private bool m_isDebug = true;
 

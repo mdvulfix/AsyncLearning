@@ -9,6 +9,7 @@ namespace Core
     public abstract class YieldModel : Yield
     {
         public Func<bool> Func { get; set; }
+
         public override bool keepWaiting => WaitFuncResult();
 
         public event Action Resolved;

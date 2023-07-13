@@ -48,6 +48,24 @@ namespace Test
             OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
         }
 
+
+        // ACTIVATE //
+        public override void Activate()
+        {
+            Obj.SetActive(true);
+            OnActivateComplete(new Result(this, true, $"{Label} activated."), m_isDebug);
+
+        }
+
+        public override void Deactivate()
+        {
+
+            Obj.SetActive(false);
+            OnDeactivateComplete(new Result(this, true, $"{Label} deactivated."), m_isDebug);
+        }
+
+
+
     }
 
     public class DebugConfig

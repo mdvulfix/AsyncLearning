@@ -6,7 +6,6 @@ namespace Core
 {
     public abstract class ModelActivable : MonoBehaviour
     {
-        [SerializeField] private bool m_isLoaded;
         [SerializeField] private bool m_isCached;
         [SerializeField] private bool m_isInitialized;
         [SerializeField] private bool m_isActivated;
@@ -17,8 +16,7 @@ namespace Core
         public GameObject Obj => gameObject;
 
 
-        public event Action<IResult> Loaded;
-        public event Action<IResult> Unloaded;
+
 
         public event Action<IResult> Recorded;
         public event Action<IResult> Cleared;
@@ -28,6 +26,9 @@ namespace Core
 
         public event Action<IResult> Activated;
         public event Action<IResult> Deactivated;
+
+
+
 
         public enum Params
         {
@@ -42,10 +43,6 @@ namespace Core
         // CONFIGURE //
         public abstract void Init(params object[] args);
         public abstract void Dispose();
-
-        // LOAD //
-        public abstract void Load();
-        public abstract void Unload();
 
         // ACTIVATE //
         public abstract void Activate();
@@ -66,23 +63,6 @@ namespace Core
 
 
         // VERIFY //    
-        protected virtual bool VerifyLoad(bool isDebug = true)
-        {
-            if (m_isInitialized == false)
-            {
-                if (isDebug) Debug.LogWarning($"{this}: instance is not initialized. Load was aborted!");
-                return true;
-            }
-
-
-            if (m_isLoaded == true)
-            {
-                if (isDebug) Debug.LogWarning($"{this}: instance was already loaded.");
-                return true;
-            }
-
-            return false;
-        }
 
         protected virtual bool VerifyInit(bool isDebug = true)
         {
@@ -95,40 +75,8 @@ namespace Core
             return false;
         }
 
-        protected virtual bool VerifyActivate(bool isDebug = true)
-        {
-
-            if (m_isLoaded == false)
-            {
-                if (isDebug) Debug.LogWarning($"{this}: instance is not loaded. Activation was aborted!");
-                return true;
-            }
-
-            return false;
-        }
-
 
         // CALLBACK //
-        protected virtual void OnLoadComplete(IResult result, bool isDebag = true)
-        {
-            m_isLoaded = true;
-
-            if (isDebag)
-                Debug.Log($"{this.GetName()}: {result.Log}");
-
-            Loaded?.Invoke(result);
-        }
-
-        protected virtual void OnUnloadComplete(IResult result, bool isDebag = true)
-        {
-            m_isLoaded = false;
-
-            if (isDebag)
-                Debug.Log($"{this.GetName()}: {result.Log}");
-
-            Unloaded?.Invoke(result);
-        }
-
 
         protected virtual void OnRecordComplete(IResult result, bool isDebag = true)
         {
@@ -197,17 +145,12 @@ namespace Core
         }
 
         // UNITY //
-        private void Awake()
-            => Load();
 
         private void OnEnable()
             => Record();
 
         private void OnDisable()
             => Clear();
-
-        private void OnDestroy()
-            => Unload();
 
 
     }
