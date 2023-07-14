@@ -1,0 +1,16 @@
+{
+    "name": "App.Debug",
+    "rootNamespace": "Test",
+    "references": [
+        "GUID:59bc849439934684bab05db12517aaf2"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

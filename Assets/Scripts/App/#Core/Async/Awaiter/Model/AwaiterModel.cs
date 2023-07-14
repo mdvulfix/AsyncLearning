@@ -7,97 +7,68 @@ using Core.Factory;
 
 namespace Core.Async
 {
-    public class AwaiterModel : ModelActivable
+    public abstract class AwaiterModel : ModelActivable
     {
 
         private AwaiterConfig m_Config;
 
         private Transform m_Parent;
 
+        private Coroutine m_Coroutine;
+
         [SerializeField] private bool m_isDebug = true;
         [SerializeField] private bool m_isReady;
 
-
-
-        private bool isComplete = false;
-        private Action m_OnResolve;
-        private Action asyncAction;
-
-
-        private Coroutine m_Coroutine;
 
         public string Label => "Awaiter";
 
         public bool IsReady => m_isReady;
 
-        public event Action FuncExecuted;
-
         public static string PREF_FOLDER = "Prefabs";
 
 
+        public abstract void Run(IYield func);
+        public abstract void Resolve();
 
-
-        public void Execute(IEnumerator func)
+        public virtual IEnumerator ExecuteAsync(IYield func, Action<IResult> callback)
         {
-            if (m_Coroutine != null)
-                StopCoroutine(m_Coroutine);
-
-            StartCoroutine(func);
-        }
-
-
-
-        public IEnumerator Run(IEnumerator func)
-        {
+            m_isReady = false;
+            transform.name = $"{Label} {this.GetHashCode()} is Busy";
 
             if (m_Coroutine != null)
                 StopCoroutine(m_Coroutine);
 
-
-            m_Coroutine = StartCoroutine(func);
-            yield return m_Coroutine;
-
-            Resolve();
-        }
-
-
-        public IYield Awaite(Action func)
-        {
-            //var awaiteFunc = new YieldWaitForAction(func);
-            // Run(awaiteFunc);
-            //func.Invoke();
-            return null; //awaiteFunc;
-
-
-            //StopCoroutine(nameof(AsyncExecute));
-
-            //var isReady = false;
-            //var log = $"{this}: async operation started...";
-            //var result = new Result(this, isReady, log);
-
-            //Complite();
-
-        }
-
-
-        public void Resolve()
-        {
-            if (m_Coroutine != null)
-                StopCoroutine(m_Coroutine);
-
+            yield return m_Coroutine = StartCoroutine(func);
 
             m_isReady = true;
-            m_OnResolve?.Invoke();
+            transform.name = $"{Label} {this.GetHashCode()} is Ready";
+
+            callback?.Invoke(new Result(this, true, $"Async operation done!"));
 
         }
 
-        public void Reset()
+
+        public void Cancel()
         {
-            if (m_Coroutine != null)
-                StopCoroutine(m_Coroutine);
+            StopAllCoroutines();
+            m_isReady = false;
+            transform.name = $"{Label} {this.GetHashCode()} Cancelled";
+            //SetState(false);
+        }
 
+        protected void SetState(bool state)
+        {
+            m_isReady = state;
+            SetName();
+        }
 
-            m_isReady = true;
+        protected void SetName()
+        {
+            if (m_isReady)
+                transform.name = $"{Label} {this.GetHashCode()} is Ready";
+            else
+                transform.name = $"{Label} {this.GetHashCode()}";
+
         }
 
         /*
@@ -140,7 +111,7 @@ namespace Core.Async
 
         public override void Dispose()
         {
-            Reset();
+            Cancel();
             OnDisposeComplete(new Result(this, true, $"{Label} disposed."), m_isDebug);
 
         }
@@ -149,17 +120,19 @@ namespace Core.Async
         // ACTIVATE //
         public override void Activate()
         {
-            Resolve();
+            var state = true;
 
-            Obj.SetActive(true);
+            Obj.SetActive(state);
+            SetState(state);
             OnActivateComplete(new Result(this, true, $"{Label} activated."), m_isDebug);
 
         }
 
         public override void Deactivate()
         {
-            Reset();
+            var state = false;
 
+            SetState(state);
             Obj.SetActive(false);
             OnDeactivateComplete(new Result(this, true, $"{Label} deactivated."), m_isDebug);
         }
@@ -210,12 +183,15 @@ namespace Core.Async
     {
         bool IsReady { get; }
 
-        //void FuncRun(Func<Action<bool>, IEnumerator> func);
-        void Execute(IEnumerator func);
-        IEnumerator Run(IEnumerator func);
-        IYield Awaite(Action func);
-        void Resolve();
-        void Reset();
+        event Action<IAwaiter> FuncInvoked;
+        event Action<IAwaiter> FuncExecuted;
+
+        void Run(IYield func);
+
+        IEnumerator ExecuteAsync(IYield func, Action<IResult> callback);
+        //IEnumerator ExecuteAsync(IEnumerator func, Action<IResult> callback);
+
+        void Cancel();
     }
 
 

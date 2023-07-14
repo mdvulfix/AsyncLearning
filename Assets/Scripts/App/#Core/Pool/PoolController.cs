@@ -76,16 +76,15 @@ namespace Core.Pool
                 catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); return; }
 
 
+            m_PoolHolder = m_Config.PoolHolder;
+
+
             if (m_PoolHolder == null)
                 m_PoolHolder = new GameObject("Pool").transform;
 
-            var poolConfig = new PoolConfig();
 
             if (m_Pool == null)
-            {
-                m_Pool = new PoolDefault();
-                m_Pool.Init(poolConfig);
-            }
+                m_Pool = new PoolDefault(new PoolConfig());
 
 
 

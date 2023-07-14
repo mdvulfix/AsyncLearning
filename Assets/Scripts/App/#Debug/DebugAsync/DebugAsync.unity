@@ -267,6 +267,8 @@ MonoBehaviour:
   m_isLoaded: 0
   m_isCached: 0
   m_isInitialized: 0
+  m_isActivated: 0
+  m_ObjBoll: {fileID: 965272880}
   m_Boll: {fileID: 1292168190}
 --- !u!1 &963194225
 GameObject:
@@ -352,6 +354,12 @@ Transform:
   m_Father: {fileID: 882490706}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &965272880 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 93012691639817430, guid: 1c5a85c6368714448b3b5e1212ad5d6e,
+    type: 3}
+  m_PrefabInstance: {fileID: 1292168188}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1292168188
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -432,7 +440,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 1292168188}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 965272880}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2e8f0e8c2a11914bbfcbdd0a2cca301, type: 3}

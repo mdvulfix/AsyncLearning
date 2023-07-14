@@ -1,7 +1,6 @@
 using System;
-using Core;
 
-namespace Test
+namespace Core.Async
 {
     public class WaitForFunc : YieldModel, IYield
     {
@@ -17,7 +16,4 @@ namespace Test
         }
 
     }
-
-
-
 }

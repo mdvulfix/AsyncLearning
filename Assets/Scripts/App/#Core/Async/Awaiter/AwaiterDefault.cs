@@ -10,6 +10,13 @@ namespace Core.Async
     public class AwaiterDefault : AwaiterModel, IAwaiter
     {
 
+
+
+
+        public event Action<IAwaiter> FuncInvoked;
+        public event Action<IAwaiter> FuncExecuted;
+
+
         public static string PREF_NAME = "AwaiterDefault";
 
         public AwaiterDefault() { }
@@ -26,13 +33,55 @@ namespace Core.Async
             }
 
             // CONFIGURE BY DEFAULT //
-            Debug.LogWarning($"{this}: {Label} will be initialized by default!");
+            Debug.LogWarning($"{this.GetName()}: {Label} will be initialized by default!");
 
 
             var config = new AwaiterConfig(Label, null);
             base.Init(config);
 
         }
+
+
+        public override void Run(IYield func)
+        {
+            FuncInvoked?.Invoke(this);
+            StartCoroutine(ExecuteAsync(func, (result) =>
+            {
+                if (result.State)
+                    Resolve();
+
+            }));
+
+        }
+
+        public override void Resolve()
+        {
+            FuncExecuted?.Invoke(this);
+
+        }
+
+
+
+
+
+
+        /*
+        public override IEnumerator ExecuteAsync(IEnumerator func, Action<IResult> callback)
+        {
+            SetState(false);
+            FuncInvoked?.Invoke(this);
+
+            if (m_Coroutine != null)
+                StopCoroutine(m_Coroutine);
+
+            yield return m_Coroutine = StartCoroutine(func);
+            callback?.Invoke(new Result(this, true, $"Async operation done!"));
+
+            SetState(true);
+            FuncExecuted?.Invoke(this);
+
+        }
+        */
 
 
         // FACTORY //
@@ -60,7 +109,7 @@ namespace Core.Async
 
             if (args.Length > 0)
                 try { instance.Init((AwaiterConfig)args[(int)AwaiterModel.Params.Config]); }
-                catch { Debug.LogWarning($"{this}: config was not found. Configuration failed!"); }
+                catch { Debug.LogWarning($"{this.GetName()}: config was not found. Configuration failed!"); }
 
             return instance;
         }

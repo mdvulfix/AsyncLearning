@@ -16,7 +16,7 @@ namespace Test.Async
         [SerializeField] private GameObject m_ObjBoll;
 
         [SerializeField] private BollDefault m_Boll;
-
+        private Stack<BollDefault> m_Bolls;
 
         private static Transform m_ObjSpawnHolder;
         private static Transform m_ObjAsyncHolder;
@@ -54,13 +54,14 @@ namespace Test.Async
             if (m_ObjAsyncHolder == null)
                 m_ObjAsyncHolder = new GameObject("Async").transform;
 
-
+            m_Bolls = new Stack<BollDefault>(10);
             m_AsyncController = new AsyncController(new AsyncControllerConfig(m_ObjAsyncHolder));
 
             for (int i = 0; i < 1; i++)
             {
                 m_Updatable.Add(m_AsyncController);
             }
+
 
 
             if (m_Boll == null)
@@ -82,13 +83,22 @@ namespace Test.Async
 
         private void Start()
         {
-            ExecuteAsync(Spawn());
-            //Spawn();
+            Spawn();
+            BollColorize(Color.yellow);
+            BollColorize(Color.gray);
+
+
+
+            //yield return m_AsyncController.ExecuteAsync(ColorizeAsync(Color.yellow, (result) => { Debug.Log(result.Log); }));
+            //yield return m_AsyncController.ExecuteAsync(ColorizeAsync(Color.gray, (result) => { Debug.Log(result.Log); }));
+            //yield return m_AsyncController.ExecuteAsync(ColorizeAsync(Color.green, (result) => { Debug.Log(result.Log); }));
+
+
 
         }
 
 
-        private IEnumerator Spawn()
+        private void Spawn()
         {
             for (int i = 0; i < 5; i++)
             {
@@ -100,68 +110,46 @@ namespace Test.Async
                 boll.Activate();
                 boll.SetColor(Color.red);
 
-                yield return new WaitForSeconds(1);
-                yield return new WaitForFunc(() => boll.SetColor(Color.red));
-                yield return new WaitForSeconds(2);
-                yield return new WaitForFunc(() => boll.SetColor(Color.blue));
-                //yield return Awaite(() => boll.Activate());
-                //yield return Awaite(() => boll.SetColor(Color.red));
+                m_Bolls.Push(boll);
+            }
+
+        }
+
+
+        //private IEnumerator ColorizeAsync(Color color, Action<IResult> action)
+        //{
+        //yield return m_AsyncController.ExecuteAsync(BollColorizeAsync(color, (result) => { Debug.Log(result.Log); }));
+        //action.Invoke(new Result(this, true, "All bolls colorizing done!"));
+        //}
+
+
+
+        private void BollColorize(Color color)
+        {
+            foreach (var boll in m_Bolls)
+            {
+                m_AsyncController.Awaite(() => boll.SetColor(color));
+                m_AsyncController.Awaite(Random.Range(1f, 3f));
+                m_AsyncController.Run();
 
             }
 
         }
 
 
-        private void ExecuteAsync(IEnumerator func)
-            => m_AsyncController.Execute(func);
-
-        //private IYield Awaite(Action action)
-        //    => m_AsyncController.Awaite(action);
 
 
-        private IEnumerator Run()
+        private IEnumerator BollColorizeAsync(Color color, Action<IResult> action)
         {
 
-            yield return null;
+            foreach (var boll in m_Bolls)
+            {
+                yield return new WaitForSeconds(Random.Range(1f, 3f));
+                yield return new WaitForFunc(() => boll.SetColor(color));
 
-            var delay = 10f;
-            var timer = delay;
-            yield return new WaitForFunc(() => WaitForTimer(ref timer));
+            }
 
-        }
-
-
-        public IEnumerator SetColorAsync(BollDefault boll, Color color)
-        {
-            yield return new WaitForFunc(() => boll.SetColor(color));
-            yield return new WaitForSeconds(2);
-            yield return new WaitForFunc(() => boll.SetColor(color));
-        }
-
-
-
-
-
-        public bool WaitForKeyUp(KeyCode key)
-        {
-            if (Input.GetKeyUp(key))
-                return true;
-
-
-            return false;
-        }
-
-
-
-        public bool WaitForTimer(ref float timer)
-        {
-            timer -= Time.deltaTime;
-
-            if (timer <= 0)
-                return true;
-
-            return false;
-
+            action.Invoke(new Result(this, true, "Colorizing done!"));
         }
 
 

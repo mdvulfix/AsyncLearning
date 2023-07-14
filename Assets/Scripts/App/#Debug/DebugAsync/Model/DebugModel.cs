@@ -7,7 +7,7 @@ namespace Test
     [Serializable]
     public abstract class DebugModel : ModelLoadable
     {
-        private bool m_isDebug = true;
+        private bool m_isDebug = false;
 
         private DebugConfig m_Config;
 
